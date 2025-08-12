@@ -1,0 +1,15 @@
+FROM ubuntu:25.04
+
+RUN set -eux; \
+  \
+  apt update -y; \
+  apt upgrade -y; \
+  apt install git python3 cmake build-essential -y; \
+  \
+  cd /opt; \
+  git clone --recursive https://github.com/Microsoft/onnxruntime.git; \
+  cd onnxruntime; \
+  ./build.sh --config Release --build_shared_lib --parallel --compile_no_warning_as_error --skip_submodule_sync --allow_running_as_root --build --update; \
+  cp -r /opt/onnxruntime/build/Linux/Release/*.so /usr/local/lib; \
+  cp -r /opt/onnxruntime/include/* /usr/local/include/onnxruntime/; \
+  rm -rf /opt/onnxruntime
