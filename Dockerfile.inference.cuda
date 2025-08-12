@@ -1,0 +1,23 @@
+FROM nvcr.io/nvidia/cuda:12.9.1-devel-ubuntu24.04
+
+RUN set -eux; \
+  \
+  apt update -y; \
+  apt upgrade -y; \
+  apt install git python3 cmake build-essential wget -y; \
+  \
+  cd /opt; \
+  cudnn_tar="cudnn-linux-x86_64-9.5.0.50_cuda12-archive.tar.xz"; \
+  wget "https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/${cudnn_tar}"; \
+  mkdir -p /opt/cudnn; \
+  tar -Jxvf ${cudnn_tar} -C /opt/cudnn --strip=1; \
+  rm -f ${cudnn_tar}; \
+  \
+  cd /opt; \
+  git clone --recursive --branch v1.20.2 https://github.com/Microsoft/onnxruntime.git; \
+  cd onnxruntime; \
+  sed -i 's|eigen;https|# eigen;https|' cmake/deps.txt; \
+  echo 'eigen;https://github.com/eigen-mirror/eigen/archive/1d8b82b0740839c0de7f1242a3585e3390ff5f33/eigen-1d8b82b0740839c0de7f1242a3585e3390ff5f33.zip;05b19b49e6fbb91246be711d801160528c135e34' >> cmake/deps.txt; \
+  ./build.sh --config Release --build_shared_lib --parallel 4 --nvcc_threads 1 --compile_no_warning_as_error --skip_submodule_sync --allow_running_as_root --build --update --use_cuda --cuda_home /usr/local/cuda --cudnn_home /opt/cudnn; \
+  cp /opt/onnxruntime/build/Linux/Release/*.so /usr/local/lib; \
+  cp -r /opt/onnxruntime/include/* /usr/local/include/onnxruntime
